@@ -9,7 +9,11 @@ setup(
     install_requires=[
         'requests',
         'beautifulsoup4',
-        'pytest',
-        'grpcio'
+        'redis',
+        'grpcio',
+        'grpcio_tools',
+        'pymongo'
+        # 'pytest' # Only for testing.
+
     ],
 )

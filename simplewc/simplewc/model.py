@@ -64,6 +64,8 @@ def retrieve_html(uri: str) -> bytes:
     :param uri: URI to the HTML document
     :return: HTML document response's content
     """
+
+    # TODO(KMilhan): Implement retry
     rqg = requests.get(uri, stream=True)
     if int(rqg.headers['Content-length']) < MAX_CONTENT_SIZE:
         return rqg.content

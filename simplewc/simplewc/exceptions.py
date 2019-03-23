@@ -34,3 +34,13 @@ class NotInResultCacheQuery(KeyError):
 class NotInDocumentStorage(KeyError):
     """We don't have such result in document storage"""
     pass
+
+
+class CannotAccessToRedis(ConnectionError):
+    """Cannot connect to Redis"""
+    pass
+
+
+class CannotAccessToMongo(ConnectionError):
+    """Cannot connect to MongoDB"""
+    pass

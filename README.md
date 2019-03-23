@@ -29,6 +29,32 @@ recent results, HTML documentation.
 1. Data storage layer
     - Multiple databases
 
+## How to test
+### Unit test
+```bash
+> python -m pytest
+```
+
+To write additional unittest, please note we provide `MockDocumentStorage` and `MockQueryCache`
+
+### Regression
+* Deply test DBs
+    - Insecure Redis running at `localhost:50001`
+    - Insecure MongoDB running at `localhost:27017`
+* Install package (or set `PYTHONPATH`/`pipenv`/`venv` if you wish)
+    ```python
+    > pip install ./simplewc
+    ```
+* Run server program
+    ```bash
+    > python -m simplewc
+    ```
+* (in another context/terminal,) Run example_client
+    ```bash
+    > python simplewc/simplewc/example_client.py  
+    ```
+TODO: regression tests can be included in `test`.
+
 ## How to use
 Use gRPC service ```rpc CountWords (WordCountRequest) returns (stream 
 WordCount)``` in your favorite language.
@@ -141,12 +167,61 @@ The example client runs as follows:
     - Met the last result
     - Found an error
         * Send error code and detailed message
-  
-## How to deploy
-Use ```simplewc.servicer:serve_insecure```. For the configuration, refer to 
-```simplewc.config```.
 
-## How to build proto
+## How to run
+As we are not using authentication, use ```simplewc.servicer:serve_insecure```. you may want to refer to
+```simplewc/simplewc/__main__.py``` for the test purpose server launch.
+* Requirements
+    - Insecure Redis running at `localhost:50001`
+    - Insecure MongoDB running at `localhost:27017`
+
+Modify ```simplewc.config``` to configure these
+
+Also, `MockDocumentStorage` and `MockQueryCache` are provided to run without Redis and MongoDB.
+
+## How to deploy
+Currently Helm package, compose file, or even `Dockerfile` is not provided. I don't expect you to use this in
+production. But if you are interested...
+
+### Configuration
+Currently this program is configured via Python file. 
+```simplewc.config``` is configured as,
+```python
+ALLOWED_PROTOCOLS = ('http', 'https')
+MAX_CONTENT_SIZE = 2 ** (10 + 10 + 4)  # 16.0 MiB
+MAX_GRPC_SERVER_THREADS = 16
+INSECURE_HOST = 'localhost'
+INSECURE_PORT = 50001
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+CACHE_EXPIRE = '600'
+
+MONGO_HOST = 'localhost'
+MONGO_PORT = 27017
+MONGO_DB = 'wc_doc_cache'
+MONGO_COLLECTION = 'wc_doc_collection'
+MONGO_TTL = 3600
+```
+
+You may want to edit this with `getenv`, such as `getenv('REDIS_HOST')`, to configure with env file. Or edit directly in
+build time for the immutable infrastructure pattern.
+
+
+### Internal communication security and privileges
+Currently this program expects insecure internal communication. We don't expect privilege check on databases.
+
+For example, Redis singleton is created as the following.
+```python
+RedisQueryCache(REDIS_HOST, REDIS_PORT, REDIS_DB)
+```
+
+`RedisQueryCache` class (and MongoDB too) has extra options to configure security. Update this to secure internal
+connections
+
+
+## How to build proto file into python file
 Prepare `grpc_tools` and `mypy-protobuf` on your dev environment, then
 ```bash
 > python -m grpc_tools.protoc -Isimplewc/simplewc/protos --python_out=simplewc/simplewc/protos --grpc_python_out=simplewc/simplewc/
@@ -162,7 +237,7 @@ protos --mypy_out=simplewc/simplewc/protos  wc.proto
 pages.
     - We can improve with encoding guessing. There are good oss 
       implementations such as `cchardet`
-1. User can find a word maximum length of 4MB
+1. User only can find a word maximum length of 4MB
 
 ## Design choices
 1. Web page cache

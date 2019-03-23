@@ -9,7 +9,8 @@ from simplewc.model import HTMLDocumentModel
 from simplewc.protos import wc_pb2_grpc
 from simplewc.protos.wc_pb2 import WordCountRequest, WordCount
 from simplewc.protos.wc_pb2_grpc import WordCountServiceServicer
-from simplewc.storage import mds, mqc
+from simplewc.storage import get_redis_cache, get_mongo_db
+
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -28,7 +29,8 @@ class WordCountServicer(WordCountServiceServicer):
         """
         try:
             uri, words = request.uri, request.words
-            model = HTMLDocumentModel(uri, mds, mqc)
+            model = HTMLDocumentModel(uri, get_mongo_db(), get_redis_cache())
+
             for word in words:
                 yield WordCount(uri=uri, word=word,
                                 count=model.count_word(word))
