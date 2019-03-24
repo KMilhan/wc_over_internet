@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+/* WordCountRequest represents a word count query. You can specify multiple
+ *  words at the same time */
+message WordCountRequest {
+    string uri = 1;
+    repeated string words = 2;
+}
+
+/* WordCount represents a word and a occurrence of it in uri */
+message WordCount {
+    string word = 1;
+    string uri = 2;
+    uint32 count = 3;
+}
+
+/* WordCountService services word counting based on WordCountRequest message.
+ * * Note on caching:
+ *     - The implementation of this service may contain internal caching on
+ *       HTML document.
+ *     - Request multiple word count in a single uri rather than calling
+ *       any services multiple times. */
+service WordCountService {
+    /* Service each word's occurrence in a certain uri.
+     * If error happens, it will cut a stream and send gRPC error code with
+     * detailed message instead of WordCount stream */
+    rpc CountWords (WordCountRequest) returns (stream WordCount);
+}
