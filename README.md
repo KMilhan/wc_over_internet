@@ -1,20 +1,21 @@
-# WC Over Internet
+# Word Count Over Internet
 
 ## Introduction
-Hierarchically cached word counter over the internet service, exposed as gRPC 
-service.
+Hierarchically cached word counter over the public internet page(HTML document), exposed as an API
+via [gRPC](https://grpc.io/) service.
 
 This program access a specific location in the web and count a word in HTML 
 document. Except,
-    * when user asks internal resource like `file://etc/fstab` or `https://cluster.local`
-    * when user asks too big page such as `https://download.ubuntu.org/installation_image.iso`
-    * (check ```simplewc/simplewc/tests/test_security.py``` for more cases.)
+  * when user asks internal resource like `file://etc/fstab` or `https://cluster.local`
+  * when user asks too big page such as `https://download.ubuntu.org/installation_image.iso`
+  * (check ```simplewc/simplewc/tests/test_security.py``` for more cases.)
 
 Internally, this program reuses and caches many parts including most 
-recent results, HTML documentation.
+recent results and recently acquired HTML documentations.
   * You can call the API on same HTML resource multiple times. It will 
   generate only one HTML documentation download from the target public web host
   in most cases.
+    - You can request multiple word counts on a single document. The results will be streamed to you.
   * Most recent accessed query and past retrieved HTML documents can have 
   separate data storages so you can have cheap storage as a documentation 
   storage and in-memory cache server as a request cache server
@@ -31,6 +32,11 @@ recent results, HTML documentation.
 
 ## How to test
 ### Unit test
+Have a `pytest`
+```bash
+> python -m pip install pytest
+```
+Run tests
 ```bash
 > python -m pytest
 ```
