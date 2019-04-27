@@ -44,7 +44,7 @@ Run tests
 To write additional unittest, please note we provide `MockDocumentStorage` and `MockQueryCache`
 
 ### Regression
-* Deply test DBs
+* Deploy test DBs
     - Insecure Redis running at `localhost:50001`
     - Insecure MongoDB running at `localhost:27017`
 * Install package (or set `PYTHONPATH`/`pipenv`/`venv` if you wish)
