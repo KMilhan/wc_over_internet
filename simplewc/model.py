@@ -1,17 +1,23 @@
 """Represent Data Model Layer"""
 import socket
 from collections import Counter
-from ipaddress import ip_address, IPv6Address
+from ipaddress import IPv6Address, ip_address
 from string import punctuation
-from typing import Union, Generator
+from typing import Generator, Union
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
 from simplewc.config import ALLOWED_PROTOCOLS, MAX_CONTENT_SIZE
-from simplewc.exceptions import NotInResultCacheQuery, NotInDocumentStorage, \
-    NotAllowedScheme, AccessLocalURI, TooBigResource, NotReacheableLocation
+from simplewc.exceptions import (
+    AccessLocalURI,
+    NotAllowedScheme,
+    NotInDocumentStorage,
+    NotInResultCacheQuery,
+    NotReacheableLocation,
+    TooBigResource,
+)
 from simplewc.storage import DocumentStorage, QueryCache
 
 
@@ -32,15 +38,16 @@ def raise_if_not_safe(uri: str):
         raise NotReacheableLocation
 
     if ip.is_link_local:
-        raise AccessLocalURI('Access to %s is to local resource' % uri)
+        raise AccessLocalURI("Access to %s is to local resource" % uri)
     if isinstance(ip, IPv6Address) and ip.is_site_local:
-        raise AccessLocalURI('Access to %s is to local resource' % uri)
+        raise AccessLocalURI("Access to %s is to local resource" % uri)
     if not ip.is_global or ip.is_loopback or ip.is_reserved:
-        raise AccessLocalURI('Access to %s is to non public resource' % uri)
+        raise AccessLocalURI("Access to %s is to non public resource" % uri)
 
 
-def tokenize_html_to_words(content: Union[str, bytes]) -> Generator[str, None,
-                                                                    None]:
+def tokenize_html_to_words(
+    content: Union[str, bytes]
+) -> Generator[str, None, None]:
     """
     Parse HTML content and split into word tokens.
       * Words are case insensitive. IOW, Always lower case.
@@ -52,7 +59,7 @@ def tokenize_html_to_words(content: Union[str, bytes]) -> Generator[str, None,
     :param content: HTML document
     :return: Each token we find in html document
     """
-    soup = BeautifulSoup(content, 'html.parser')
+    soup = BeautifulSoup(content, "html.parser")
     for tok in soup.prettify().split():
         yield tok.strip(punctuation).lower()
     return
@@ -67,19 +74,20 @@ def retrieve_html(uri: str) -> bytes:
 
     # TODO(KMilhan): Implement retry
     rqg = requests.get(uri, stream=True)
-    if int(rqg.headers['Content-length']) < MAX_CONTENT_SIZE:
+    if int(rqg.headers["Content-length"]) < MAX_CONTENT_SIZE:
         return rqg.content
-    else:
-        raise TooBigResource('%s is too big file to parse' %
-                             rqg.headers['Content-length'])
+
+    raise TooBigResource(
+        "%s is too big file to parse" % rqg.headers["Content-length"]
+    )
 
 
 class HTMLDocumentModel:
     """Represents HTML Document and its behaviors"""
 
-    def __init__(self, uri: str,
-                 doc_store: DocumentStorage,
-                 query_cache: QueryCache):
+    def __init__(
+        self, uri: str, doc_store: DocumentStorage, query_cache: QueryCache
+    ):
         """
         Create HTMLDocumentModel
         :param uri: Where the HTML Document is serviced
@@ -105,8 +113,9 @@ class HTMLDocumentModel:
             return self.query_cache.get(self.uri, word)
         except NotInResultCacheQuery:
             # Try to use document storage. Update query cache
-            self.query_cache.store(self.uri, word,
-                                   self.local_counter_cache[word])
+            self.query_cache.store(
+                self.uri, word, self.local_counter_cache[word]
+            )
             return self.local_counter_cache[word]
 
     @property
@@ -127,8 +136,9 @@ class HTMLDocumentModel:
             # We failed to query document storage.
 
             # Then, actually access web
-            self._local_counter_cache = Counter(tokenize_html_to_words(
-                self.get_html(self.uri)))
+            self._local_counter_cache = Counter(
+                tokenize_html_to_words(self.get_html(self.uri))
+            )
             # Store the result
             self.doc_store.store(self.uri, self._local_counter_cache)
 

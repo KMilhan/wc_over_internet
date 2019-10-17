@@ -4,4 +4,4 @@
 from simplewc.servicer import serve_insecure
 
 # Test purpose server
-serve_insecure('[::]:50001')
+serve_insecure("[::]:50001")

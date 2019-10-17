@@ -20,7 +20,7 @@ class WordCountServiceStub(object):
           channel: A grpc.Channel.
         """
         self.CountWords = channel.unary_stream(
-            '/WordCountService/CountWords',
+            "/WordCountService/CountWords",
             request_serializer=wc__pb2.WordCountRequest.SerializeToString,
             response_deserializer=wc__pb2.WordCount.FromString,
         )
@@ -41,18 +41,19 @@ class WordCountServiceServicer(object):
         detailed message instead of WordCount stream
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
 
 def add_WordCountServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'CountWords': grpc.unary_stream_rpc_method_handler(
+        "CountWords": grpc.unary_stream_rpc_method_handler(
             servicer.CountWords,
             request_deserializer=wc__pb2.WordCountRequest.FromString,
             response_serializer=wc__pb2.WordCount.SerializeToString,
-        ),
+        )
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        'WordCountService', rpc_method_handlers)
+        "WordCountService", rpc_method_handlers
+    )
     server.add_generic_rpc_handlers((generic_handler,))

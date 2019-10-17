@@ -8,9 +8,23 @@ import redis
 from pymongo import MongoClient
 from pymongo.errors import OperationFailure
 
-from simplewc.config import REDIS_HOST, REDIS_PORT, REDIS_DB, CACHE_EXPIRE, MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_TTL, \
-    MONGO_COLLECTION
-from simplewc.exceptions import NotInDocumentStorage, NotInResultCacheQuery, CannotAccessToRedis, CannotAccessToMongo
+from simplewc.config import (
+    CACHE_EXPIRE,
+    MONGO_COLLECTION,
+    MONGO_DB,
+    MONGO_HOST,
+    MONGO_PORT,
+    MONGO_TTL,
+    REDIS_DB,
+    REDIS_HOST,
+    REDIS_PORT,
+)
+from simplewc.exceptions import (
+    CannotAccessToMongo,
+    CannotAccessToRedis,
+    NotInDocumentStorage,
+    NotInResultCacheQuery,
+)
 
 
 class DocumentStorage(ABC):
@@ -66,8 +80,8 @@ class MockDocumentStorage(DocumentStorage):
     def get(self, uri: str):
         if uri in self.mock_db:
             return self.mock_db[uri]
-        else:
-            raise NotInDocumentStorage
+
+        raise NotInDocumentStorage
 
 
 class MockQueryCache(QueryCache):
@@ -80,8 +94,8 @@ class MockQueryCache(QueryCache):
     def get(self, uri: str, word: str) -> int:
         if (uri, word) in self.mock_cache:
             return self.mock_cache[(uri, word)]
-        else:
-            raise NotInResultCacheQuery
+
+        raise NotInResultCacheQuery
 
     def store(self, uri: str, word: str, count: int):
         self.mock_cache[(uri, word)] = count
@@ -104,7 +118,7 @@ class RedisQueryCache(QueryCache):
         self.expire = CACHE_EXPIRE
 
         try:
-            self.redis.exists('wc_test_val')
+            self.redis.exists("wc_test_val")
         except ConnectionError:
             raise CannotAccessToRedis
 
@@ -119,8 +133,8 @@ class RedisQueryCache(QueryCache):
         cache = self.redis.hget(uri, word)
         if cache is not None:
             return int(cache)
-        else:
-            raise NotInResultCacheQuery
+
+        raise NotInResultCacheQuery
 
     def store(self, uri: str, word: str, count: int):
         """
@@ -142,7 +156,15 @@ class RedisQueryCache(QueryCache):
 class MongoDocumentStorage(DocumentStorage):
     """MongoDB as a document storage"""
 
-    def __init__(self, host: str, port: int, mongo_db_name: str, mongo_collection: str, mongo_ttl: int, **mongo_opt):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        mongo_db_name: str,
+        mongo_collection: str,
+        mongo_ttl: int,
+        **mongo_opt,
+    ):
         """
         :param host: MongoDB host
         :param port: MongoDB port
@@ -161,19 +183,22 @@ class MongoDocumentStorage(DocumentStorage):
             raise CannotAccessToMongo
 
         try:
-            self.collection.create_index('added', expireAfterSeconds=mongo_ttl)
+            self.collection.create_index("added", expireAfterSeconds=mongo_ttl)
         except OperationFailure:
-            print('Warning: TTL value for MongoDB document set with different value', file=sys.stderr)
+            print(
+                "Warning: TTL value for MongoDB document set with different value",
+                file=sys.stderr,
+            )
 
     @classmethod
     def to_mongo_key(cls, key: str) -> str:
         """MongoDB does not support `$` and `.` in key. Converting it to unicode is MongoDB's official recommendation"""
-        return key.replace('$', '＄').replace('.', '．')
+        return key.replace("$", "＄").replace(".", "．")
 
     @classmethod
     def to_plain_key(cls, key: str) -> str:
         """Revert escaped MongoDB key string to original string"""
-        return key.replace('＄', '$').replace('．', '.')
+        return key.replace("＄", "$").replace("．", ".")
 
     @classmethod
     def to_mongo_hash(cls, counter: Counter) -> dict:
@@ -196,7 +221,13 @@ class MongoDocumentStorage(DocumentStorage):
         :return: None
         """
         uri = self.to_mongo_key(uri)
-        self.collection.insert_one({'added': datetime.utcnow(), 'uri': uri, 'counter': self.to_mongo_hash(counter)})
+        self.collection.insert_one(
+            {
+                "added": datetime.utcnow(),
+                "uri": uri,
+                "counter": self.to_mongo_hash(counter),
+            }
+        )
 
     def get(self, uri: str) -> Counter:
         """
@@ -206,11 +237,11 @@ class MongoDocumentStorage(DocumentStorage):
         :raise: NotInDocumentStorage when we can't find it in MongoDB
         """
         uri = self.to_mongo_key(uri)
-        doc = self.collection.find_one({'uri': uri})
+        doc = self.collection.find_one({"uri": uri})
         if doc:
-            return self.to_counter(doc['counter'])
-        else:
-            raise NotInDocumentStorage
+            return self.to_counter(doc["counter"])
+
+        raise NotInDocumentStorage
 
 
 _RQC = None
@@ -231,5 +262,7 @@ def get_mongo_db():
     global _MDS
     if _MDS:
         return _MDS
-    _MDS = MongoDocumentStorage(MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_COLLECTION, MONGO_TTL)
+    _MDS = MongoDocumentStorage(
+        MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_COLLECTION, MONGO_TTL
+    )
     return _MDS
