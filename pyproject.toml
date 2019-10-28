@@ -58,3 +58,7 @@ use_parentheses = true
 include_trailing_comma = true
 multi_line_output = 3
 skip_glob = ".egg,.git,.hg,.mypy_cache,.tox,.venv,_build,buck-out,build,dist,venv,node_modules"
+default_section = "THIRDPARTY"
+known_first_party = "simplewc"
+no_lines_before = "LOCALFOLDER"
+sections = "FUTURE,STDLIB,DJANGO,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
